@@ -5,6 +5,7 @@
         "start": "nodemon ./src/server/index.ts",
         "test:unit": "jest",
         "test:e2e": "node_modules/.bin/hermione",
+        "test:e2e:update": "node_modules/.bin/hermione --update-refs",
         "test:e2e:gui": "node_modules/.bin/hermione gui",
         "test": "npm run test:unit && npm run test:e2e",
         "build": "webpack --mode=production --node-env=production",

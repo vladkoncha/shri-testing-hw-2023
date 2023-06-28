@@ -9,6 +9,22 @@ function getUrl() {
   return "/hw/store" + (bugId && `?bug_id=${bugId}`);
 }
 
+describe("Тестирование общих требований: адаптивная верстка", () => {
+  function testAdaptiveWidth(width) {
+    it(`Вёрстка должна адаптироваться под ширину экрана ${width}px`, async ({
+      browser,
+    }) => {
+      await browser.setWindowSize(width, 1000);
+      await browser.url(getUrl());
+      await browser.$(".Application");
+      await browser.assertView(`plain-w${width}px`, ".Application");
+    });
+  }
+
+  const widthToTest = [575, 768, 1024, 1200];
+  widthToTest.forEach((width) => testAdaptiveWidth(width));
+});
+
 describe('Тестирование общих требований: "Гамбургер"', () => {
   it('На ширине меньше 576px навигационное меню должно скрываться за "Гамбургер"', async ({
     browser,
