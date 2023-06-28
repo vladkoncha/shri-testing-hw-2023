@@ -1,25 +1,6 @@
-import { BrowserRouter } from "react-router-dom";
-import { Provider } from "react-redux";
-import { Application } from "../../src/client/Application";
 import React from "react";
-import { CartApi, ExampleApi } from "../../src/client/api";
-import { initStore } from "../../src/client/store";
-import { render, screen } from "@testing-library/react";
-
-function createApp() {
-  const basename = "/";
-  const api = new ExampleApi(basename);
-  const cart = new CartApi();
-  const store = initStore(api, cart);
-  const application = (
-    <BrowserRouter basename={basename}>
-      <Provider store={store}>
-        <Application />
-      </Provider>
-    </BrowserRouter>
-  );
-  return render(application);
-}
+import { screen } from "@testing-library/react";
+import { createApp } from "./CreateApp";
 
 describe("Тестирование общих требований: шапка", () => {
   it("В шапке отображаются ссылки на страницы магазина", () => {
