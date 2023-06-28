@@ -1,4 +1,5 @@
 module.exports = {
+  baseUrl: "http://localhost:3000",
   sets: {
     desktop: {
       files: "test/hermione",
