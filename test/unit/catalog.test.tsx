@@ -1,48 +1,46 @@
 import React from "react";
 import "@testing-library/jest-dom";
-import { render, screen, waitFor } from "@testing-library/react";
-import { CartApi, ExampleApi } from "../../src/client/api";
+import { render, screen } from "@testing-library/react";
 import { ApplicationState } from "../../src/client/store";
 import { commerce } from "faker";
 import { Provider } from "react-redux";
-import { Catalog } from "../../src/client/pages/Catalog";
 import { createStore } from "redux";
-import { Product } from "../../src/common/types";
-import { BrowserRouter, MemoryRouter } from "react-router-dom";
+import { CartState, Product } from "../../src/common/types";
+import { MemoryRouter } from "react-router-dom";
 import { Application } from "../../src/client/Application";
 
-function createCatalog(initState: ApplicationState) {
-  const basename = "/";
-  const api = new ExampleApi(basename);
-  const cart = new CartApi();
+function createCatalog(initState: ApplicationState, productId?: string) {
   const store = createStore(() => initState);
+
+  const url = `/catalog/${productId ?? ""}`;
   const application = (
-    <BrowserRouter basename={basename}>
+    <MemoryRouter initialEntries={[url]}>
       <Provider store={store}>
-        <Catalog />
+        <Application />
       </Provider>
-    </BrowserRouter>
+    </MemoryRouter>
   );
   return render(application);
 }
 
-describe("Тестирование каталога", () => {
-  function initProducts(products: Product[]) {
-    for (let id = 0; id < 10; id++) {
-      products.push({
-        id,
-        name: `${commerce.productAdjective()} ${commerce.product()}`,
-        description: commerce.productDescription(),
-        price: Number(commerce.price()),
-        color: commerce.color(),
-        material: commerce.productMaterial(),
-      });
-    }
+function initProducts(): Product[] {
+  const products: Product[] = [];
+  for (let id = 0; id < 10; id++) {
+    products.push({
+      id,
+      name: `${commerce.productAdjective()} ${commerce.product()}`,
+      description: commerce.productDescription(),
+      price: Number(commerce.price()),
+      color: commerce.color(),
+      material: commerce.productMaterial(),
+    });
   }
+  return products;
+}
 
+describe("Тестирование каталога", () => {
   it("В каталоге должны отображаться товары, список которых приходит с сервера", () => {
-    const products: Product[] = [];
-    initProducts(products);
+    const products = initProducts();
     const initState = {
       details: {},
       cart: {},
@@ -58,8 +56,7 @@ describe("Тестирование каталога", () => {
   });
 
   it("Для каждого товара в каталоге отображается название, цена и ссылка на страницу с подробной информацией о товаре", () => {
-    const products: Product[] = [];
-    initProducts(products);
+    const products = initProducts();
     const initState = {
       details: {},
       cart: {},
@@ -99,15 +96,7 @@ describe("Тестирование каталога", () => {
     initState: ApplicationState
   ) {
     it(`На странице с подробной информацией продукта ${product.id} отображаются: название товара, его описание, цена, цвет, материал и кнопка "добавить в корзину"`, () => {
-      const store = createStore(() => initState);
-
-      const { container } = render(
-        <MemoryRouter initialEntries={[`/catalog/${product.id}`]}>
-          <Provider store={store}>
-            <Application />
-          </Provider>
-        </MemoryRouter>
-      );
+      const { container } = createCatalog(initState, product.id.toString());
 
       const productDetailsContainer = container.querySelector(".Product");
       expect(productDetailsContainer).toBeInTheDocument();
@@ -138,15 +127,60 @@ describe("Тестирование каталога", () => {
     });
   }
 
-  const products: Product[] = [];
-  initProducts(products);
+  const products = initProducts();
   const initState = {
     details: products,
     cart: {},
     products,
   };
-
   for (const product of products) {
     testProductDescription(product, initState);
   }
+});
+
+describe("Если товар уже добавлен в корзину", () => {
+  const products = initProducts();
+
+  const idsInCart = [0, 1];
+  const cart: CartState = {};
+
+  idsInCart.forEach((id) => {
+    cart[id] = {
+      name: products[id].name,
+      price: products[id].price,
+      count: 1,
+    };
+  });
+
+  const initState = {
+    details: products,
+    cart,
+    products,
+  };
+
+  it("В каталоге должно отображаться сообщение об этом", () => {
+    createCatalog(initState);
+
+    for (const id of idsInCart) {
+      const productIdContainer = screen.queryAllByTestId(id.toString())[0];
+      expect(productIdContainer).toBeInTheDocument();
+
+      const cartBadge = productIdContainer.querySelector(".CartBadge");
+      expect(cartBadge).toBeInTheDocument();
+      expect(cartBadge).toHaveTextContent("Item in cart");
+    }
+  });
+
+  it("На странице товара должно отображаться сообщение об этом", () => {
+    for (const id of idsInCart) {
+      const { container } = createCatalog(initState, id.toString());
+
+      const productIdContainer = container.querySelector(".Product");
+      expect(productIdContainer).toBeInTheDocument();
+
+      const cartBadge = productIdContainer.querySelector(".CartBadge");
+      expect(cartBadge).toBeInTheDocument();
+      expect(cartBadge).toHaveTextContent("Item in cart");
+    }
+  });
 });
