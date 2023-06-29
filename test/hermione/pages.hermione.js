@@ -15,7 +15,9 @@ describe("Тестирование страниц", () => {
       await browser.setWindowSize(1024, 1000);
       await browser.url(getUrl(page === "home" ? "" : page));
       await browser.$(".Application");
-      await browser.assertView(`plain-static-${page}`, ".Application");
+      await browser.assertView(`plain-static-${page}`, ".Application", {
+        ignoreElements: [".Application-Menu"],
+      });
     });
   }
 

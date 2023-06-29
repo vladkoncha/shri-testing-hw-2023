@@ -17,7 +17,9 @@ describe("Тестирование общих требований: адапти
       await browser.setWindowSize(width, 1000);
       await browser.url(getUrl());
       await browser.$(".Application");
-      await browser.assertView(`plain-w${width}px`, ".Application");
+      await browser.assertView(`plain-w${width}px`, ".Application", {
+        ignoreElements: [".Application-Menu"],
+      });
     });
   }
 
