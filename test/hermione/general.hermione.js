@@ -5,26 +5,33 @@ if (process.env.BUG_ID !== undefined) {
   bugId = process.env.BUG_ID;
 }
 
-function getUrl() {
-  return "/hw/store" + (bugId && `?bug_id=${bugId}`);
+function getUrl(route) {
+  return `/hw/store${route}` + (bugId && `?bug_id=${bugId}`);
 }
 
 describe("Тестирование общих требований: адаптивная верстка", () => {
-  function testAdaptiveWidth(width) {
-    it(`Вёрстка должна адаптироваться под ширину экрана ${width}px`, async ({
+  function testAdaptiveWidth(width, page) {
+    it(`Вёрстка страницы ${page} должна адаптироваться под ширину экрана ${width}px`, async ({
       browser,
     }) => {
-      await browser.setWindowSize(width, 1000);
-      await browser.url(getUrl());
+      await browser.setWindowSize(width, 5000);
+      browser.execute(() =>
+        window.localStorage.removeItem("example-store-cart")
+      );
+      await browser.url(getUrl(page === "home" ? "/" : page));
       await browser.$(".Application");
-      await browser.assertView(`plain-w${width}px`, ".Application", {
-        ignoreElements: [".Application-Menu"],
-      });
+      await browser.assertView(`plain-${page}-w${width}px`, ".Application");
     });
   }
 
   const widthToTest = [575, 768, 1024, 1200];
-  widthToTest.forEach((width) => testAdaptiveWidth(width));
+  const pagesToTest = ["home", "/delivery", "/contacts", "/cart"];
+
+  for (const page of pagesToTest) {
+    for (const width of widthToTest) {
+      testAdaptiveWidth(width, page);
+    }
+  }
 });
 
 describe('Тестирование общих требований: "Гамбургер"', () => {
@@ -32,7 +39,7 @@ describe('Тестирование общих требований: "Гамбу�
     browser,
   }) => {
     await browser.setWindowSize(575, 1000);
-    await browser.url(getUrl());
+    await browser.url(getUrl(""));
 
     const menu = await browser.$(".Application-Menu");
     const toggler = await browser.$(".Application-Toggler");
@@ -53,7 +60,7 @@ describe('Тестирование общих требований: "Гамбу�
     browser,
   }) => {
     await browser.setWindowSize(575, 1000);
-    await browser.url(getUrl());
+    await browser.url(getUrl(""));
 
     const menu = await browser.$(".Application-Menu");
     const toggler = await browser.$(".Application-Toggler");

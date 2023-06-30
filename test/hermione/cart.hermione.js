@@ -215,4 +215,68 @@ describe("Тестирование корзины.", () => {
       "Должна отображаться ссылка на каталог."
     );
   });
+
+  it(`После создания заказа должно появляться уведомление об успешной покупке`, async ({
+    browser,
+  }) => {
+    await browser.setWindowSize(1024, 1000);
+
+    browser.execute(() => window.localStorage.removeItem("example-store-cart"));
+
+    const idsToTest = [0];
+    for (const id of idsToTest) {
+      for (let i = 0; i < 3; i++) {
+        await clickAddToCartButton(browser, { id, count: 0 });
+      }
+    }
+    const cartTable = await getCartTable(browser);
+
+    assert.equal(
+      await cartTable.isDisplayed(),
+      true,
+      "Таблица с заказом должна существовать."
+    );
+
+    const form = await browser.$(".Form");
+    assert.equal(
+      await form.isDisplayed(),
+      true,
+      "Форма заказа должна существовать."
+    );
+
+    const formInputName = await browser.$(".Form-Field_type_name");
+    const formInputPhone = await browser.$(".Form-Field_type_phone");
+    const formInputAddress = await browser.$(".Form-Field_type_address");
+
+    await formInputName.addValue("Bob");
+    await formInputPhone.addValue("89005553030");
+    await formInputAddress.addValue("ABC");
+
+    const submitButton = await browser.$(".Form-Submit");
+    assert.equal(
+      await submitButton.isDisplayed(),
+      true,
+      "Кнопка отправки формы должна существовать."
+    );
+    await submitButton.click();
+
+    await new Promise((resolve) => {
+      setTimeout(() => resolve(), 1000);
+    });
+
+    const cartSuccessCard = await browser.$(".Cart-SuccessMessage");
+
+    assert.equal(
+      await cartSuccessCard.isDisplayed(),
+      true,
+      "Карточка успешной покупки должна существовать."
+    );
+
+    const cardClasses = await cartSuccessCard.getAttribute("class");
+    assert.include(
+      cardClasses,
+      "alert-success",
+      "Карточка успешной покупки должна иметь класс alert-success"
+    );
+  });
 });

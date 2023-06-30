@@ -13,14 +13,25 @@ describe("Тестирование страниц", () => {
       browser,
     }) => {
       await browser.setWindowSize(1024, 1000);
+      browser.execute(() =>
+        window.localStorage.removeItem("example-store-cart")
+      );
       await browser.url(getUrl(page === "home" ? "" : page));
       await browser.$(".Application");
-      await browser.assertView(`plain-static-${page}`, ".Application", {
-        ignoreElements: [".Application-Menu"],
-      });
+      await browser.assertView(`plain-static-${page}`, ".Application");
     });
   }
 
   const pagesToTest = ["home", "delivery", "contacts"];
   pagesToTest.forEach((width) => testAdaptiveWidth(width));
+
+  it(`На странице продукта должна быть большая кнопка Add to Cart`, async ({
+    browser,
+  }) => {
+    await browser.setWindowSize(1024, 1000);
+    browser.execute(() => window.localStorage.removeItem("example-store-cart"));
+    await browser.url(getUrl("catalog/0"));
+    await browser.$(".Application");
+    await browser.assertView(`addToCart-button`, ".ProductDetails-AddToCart");
+  });
 });
