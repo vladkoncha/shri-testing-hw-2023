@@ -25,8 +25,17 @@ describe("Тестирование корзины", () => {
     await browser.url(getUrl("/cart"));
     const cartContainer = await browser.$(".Cart");
 
-    const cartClearButton = await cartContainer.$(".Cart-Clear");
-    await cartClearButton.click();
+    const cartTable = await cartContainer.$(".Cart-Table");
+
+    assert.exists(cartTable, "Должна существовать таблица с заказом.");
+
+    const clearCartButton = await cartContainer.$(".Cart-Clear");
+    assert.exists(
+      clearCartButton,
+      "Должна существовать кнопка очистки корзины."
+    );
+
+    await clearCartButton.click();
   }
 
   async function getProductInfo(browser, productId) {
@@ -151,6 +160,34 @@ describe("Тестирование корзины", () => {
     });
   }
 
+  function testClearCartButton() {
+    it(`В корзине должна быть кнопка "очистить корзину", по нажатию на которую все товары должны удаляться`, async ({
+      browser,
+    }) => {
+      await browser.setWindowSize(1024, 1000);
+
+      browser.execute(() =>
+        window.localStorage.removeItem("example-store-cart")
+      );
+
+      const idsToTest = [0];
+      for (const id of idsToTest) {
+        for (let i = 0; i < 3; i++) {
+          await clickAddToCartButton(browser, { id, count: 0 });
+        }
+      }
+      await clickClearShoppingCartButton(browser);
+      const cartTable = await getCartTable(browser);
+
+      assert.equal(
+        await cartTable.isDisplayed(),
+        false,
+        "Таблица с заказом должна удалиться после очистки корзины"
+      );
+    });
+  }
+
   testHeaderCartCount();
   testCartTable();
+  testClearCartButton();
 });
