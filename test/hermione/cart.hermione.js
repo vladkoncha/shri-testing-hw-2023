@@ -17,8 +17,11 @@ describe("Тестирование корзины.", () => {
     const addToCartButton = await productContainer.$(
       ".ProductDetails-AddToCart"
     );
-    await addToCartButton.click();
     product.count += 1;
+    await addToCartButton.click();
+    await new Promise((resolve) => {
+      setTimeout(() => resolve(), 100);
+    });
   }
 
   async function clickClearShoppingCartButton(browser) {
@@ -94,7 +97,7 @@ describe("Тестирование корзины.", () => {
       assert.equal(
         await productRow.$(".Cart-Count").getText(),
         `${product.count}`,
-        `В таблице заказа должно отображаться количество добавленного товара`
+        `В таблице заказа должно отображаться количество добавленного товара ${product.name}`
       );
 
       const productTotal =
@@ -126,7 +129,6 @@ describe("Тестирование корзины.", () => {
     browser,
   }) => {
     await browser.setWindowSize(1024, 1000);
-
     browser.execute(() => window.localStorage.removeItem("example-store-cart"));
 
     const idsToTest = [0, 1, 2, 3, 4, 5];
@@ -173,7 +175,6 @@ describe("Тестирование корзины.", () => {
     browser,
   }) => {
     await browser.setWindowSize(1024, 1000);
-
     browser.execute(() => window.localStorage.removeItem("example-store-cart"));
 
     const idsToTest = [0];
@@ -196,7 +197,6 @@ describe("Тестирование корзины.", () => {
     browser,
   }) => {
     await browser.setWindowSize(1024, 1000);
-
     browser.execute(() => window.localStorage.removeItem("example-store-cart"));
 
     const cartTable = await getCartTable(browser);
@@ -220,7 +220,6 @@ describe("Тестирование корзины.", () => {
     browser,
   }) => {
     await browser.setWindowSize(1024, 1000);
-
     browser.execute(() => window.localStorage.removeItem("example-store-cart"));
 
     const idsToTest = [0];

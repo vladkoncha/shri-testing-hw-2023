@@ -44,6 +44,9 @@ describe("Тестирование каталога.", () => {
       browser,
     }) => {
       await browser.setWindowSize(1024, 1000);
+      browser.execute(() =>
+        window.localStorage.removeItem("example-store-cart")
+      );
 
       for (let i = 1; i <= 3; i++) {
         await clickAddToCartButton(browser, productId);
@@ -61,6 +64,9 @@ describe("Тестирование каталога.", () => {
       browser,
     }) => {
       await browser.setWindowSize(1024, 1000);
+      browser.execute(() =>
+        window.localStorage.removeItem("example-store-cart")
+      );
 
       const tables = [];
 
