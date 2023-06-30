@@ -9,7 +9,7 @@ function getUrl(route, productId = "") {
   return `/hw/store${route}/${productId}` + (bugId && `?bug_id=${bugId}`);
 }
 
-describe("Тестирование корзины", () => {
+describe("Тестирование корзины.", () => {
   async function clickAddToCartButton(browser, product) {
     await browser.url(getUrl("/catalog", product.id));
     const productContainer = await browser.$(".Product");
@@ -62,10 +62,22 @@ describe("Тестирование корзины", () => {
     await browser.url(getUrl("/cart"));
     const table = await browser.$(".Cart-Table");
 
+    assert.equal(
+      await table.isDisplayed(),
+      true,
+      `Должна существовать таблица с заказом.`
+    );
+
     let totalPrice = 0;
 
     for (const product of products) {
       const productRow = await table.$(`tr[data-testid="${product.id}"]`);
+
+      assert.equal(
+        await productRow.isDisplayed(),
+        true,
+        `Должна существовать строка с продуктом ${product.id}.`
+      );
 
       assert.equal(
         await productRow.$(".Cart-Name").getText(),
