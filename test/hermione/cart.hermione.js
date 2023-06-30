@@ -110,118 +110,97 @@ describe("Тестирование корзины", () => {
     return await browser.$(".Cart-Table");
   }
 
-  function testHeaderCartCount() {
-    it(`В шапке рядом со ссылкой на корзину должно отображаться количество не повторяющихся товаров в ней`, async ({
-      browser,
-    }) => {
-      await browser.setWindowSize(1024, 1000);
+  it(`В шапке рядом со ссылкой на корзину должно отображаться количество не повторяющихся товаров в ней`, async ({
+    browser,
+  }) => {
+    await browser.setWindowSize(1024, 1000);
 
-      browser.execute(() =>
-        window.localStorage.removeItem("example-store-cart")
-      );
+    browser.execute(() => window.localStorage.removeItem("example-store-cart"));
 
-      const idsToTest = [0, 1, 2, 3, 4, 5];
-      for (const id of idsToTest) {
-        for (let i = 0; i < 3; i++) {
-          await clickAddToCartButton(browser, { id, count: 0 });
-        }
+    const idsToTest = [0, 1, 2, 3, 4, 5];
+    for (const id of idsToTest) {
+      for (let i = 0; i < 3; i++) {
+        await clickAddToCartButton(browser, { id, count: 0 });
       }
+    }
 
-      const cartLinkText = await (
-        await browser.$(`.Application-Menu a[href="/hw/store/cart"]`)
-      ).getText();
+    const cartLinkText = await (
+      await browser.$(`.Application-Menu a[href="/hw/store/cart"]`)
+    ).getText();
 
-      assert.equal(
-        cartLinkText,
-        `Cart (${idsToTest.length})`,
-        `В шапке должно отображаться количество уникальных товаров в корзине`
-      );
-    });
-  }
+    assert.equal(
+      cartLinkText,
+      `Cart (${idsToTest.length})`,
+      `В шапке должно отображаться количество уникальных товаров в корзине`
+    );
+  });
 
-  function testCartTable() {
-    it(`Для каждого товара должны отображаться название, цена, количество, стоимость, а также должна отображаться общая сумма заказа`, async ({
-      browser,
-    }) => {
-      await browser.setWindowSize(1024, 1000);
-      browser.execute(() =>
-        window.localStorage.removeItem("example-store-cart")
-      );
+  it(`Для каждого товара должны отображаться название, цена, количество, стоимость, а также должна отображаться общая сумма заказа`, async ({
+    browser,
+  }) => {
+    await browser.setWindowSize(1024, 1000);
+    browser.execute(() => window.localStorage.removeItem("example-store-cart"));
 
-      const idsToTest = [0, 1, 2, 3, 4, 5];
-      const products = [];
-      for (const id of idsToTest) {
-        const product = await getProductInfo(browser, id);
-        products.push(product);
+    const idsToTest = [0, 1, 2, 3, 4, 5];
+    const products = [];
+    for (const id of idsToTest) {
+      const product = await getProductInfo(browser, id);
+      products.push(product);
+    }
+
+    for (const product of products) {
+      for (let i = 0; i < 3; i++) {
+        await clickAddToCartButton(browser, product);
       }
+    }
 
-      for (const product of products) {
-        for (let i = 0; i < 3; i++) {
-          await clickAddToCartButton(browser, product);
-        }
+    await assertProductsInTable(browser, products);
+  });
+
+  it(`В корзине должна быть кнопка "очистить корзину", по нажатию на которую все товары должны удаляться`, async ({
+    browser,
+  }) => {
+    await browser.setWindowSize(1024, 1000);
+
+    browser.execute(() => window.localStorage.removeItem("example-store-cart"));
+
+    const idsToTest = [0];
+    for (const id of idsToTest) {
+      for (let i = 0; i < 3; i++) {
+        await clickAddToCartButton(browser, { id, count: 0 });
       }
+    }
+    await clickClearShoppingCartButton(browser);
+    const cartTable = await getCartTable(browser);
 
-      await assertProductsInTable(browser, products);
-    });
-  }
+    assert.equal(
+      await cartTable.isDisplayed(),
+      false,
+      "Таблица с заказом должна удалиться после очистки корзины"
+    );
+  });
 
-  function testClearCartButton() {
-    it(`В корзине должна быть кнопка "очистить корзину", по нажатию на которую все товары должны удаляться`, async ({
-      browser,
-    }) => {
-      await browser.setWindowSize(1024, 1000);
+  it(`Если корзина пустая, должна отображаться ссылка на каталог товаров`, async ({
+    browser,
+  }) => {
+    await browser.setWindowSize(1024, 1000);
 
-      browser.execute(() =>
-        window.localStorage.removeItem("example-store-cart")
-      );
+    browser.execute(() => window.localStorage.removeItem("example-store-cart"));
 
-      const idsToTest = [0];
-      for (const id of idsToTest) {
-        for (let i = 0; i < 3; i++) {
-          await clickAddToCartButton(browser, { id, count: 0 });
-        }
-      }
-      await clickClearShoppingCartButton(browser);
-      const cartTable = await getCartTable(browser);
+    const cartTable = await getCartTable(browser);
+    assert.equal(
+      await cartTable.isDisplayed(),
+      false,
+      "Таблица с заказом не должна отображаться, если корзина пустая."
+    );
 
-      assert.equal(
-        await cartTable.isDisplayed(),
-        false,
-        "Таблица с заказом должна удалиться после очистки корзины"
-      );
-    });
-  }
+    await browser.url(getUrl("/cart"));
+    const catalogLink = await browser.$('a[href="/hw/store/catalog"]');
 
-  function testEmptyCartLink() {
-    it(`Если корзина пустая, должна отображаться ссылка на каталог товаров`, async ({
-      browser,
-    }) => {
-      await browser.setWindowSize(1024, 1000);
-
-      browser.execute(() =>
-        window.localStorage.removeItem("example-store-cart")
-      );
-
-      const cartTable = await getCartTable(browser);
-      assert.equal(
-        await cartTable.isDisplayed(),
-        false,
-        "Таблица с заказом не должна отображаться, если корзина пустая."
-      );
-
-      await browser.url(getUrl("/cart"));
-      const catalogLink = await browser.$('a[href="/hw/store/catalog"]');
-
-      assert.equal(
-        await catalogLink.isDisplayed(),
-        true,
-        "Должна отображаться ссылка на каталог."
-      );
-    });
-  }
-
-  testHeaderCartCount();
-  testCartTable();
-  testClearCartButton();
-  testEmptyCartLink();
+    assert.equal(
+      await catalogLink.isDisplayed(),
+      true,
+      "Должна отображаться ссылка на каталог."
+    );
+  });
 });
