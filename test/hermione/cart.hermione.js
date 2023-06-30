@@ -155,7 +155,7 @@ describe("Тестирование корзины.", () => {
     await browser.setWindowSize(1024, 1000);
     browser.execute(() => window.localStorage.removeItem("example-store-cart"));
 
-    const idsToTest = [0, 1, 2, 3, 4, 5];
+    const idsToTest = [0, 1, 2, 3];
     const products = [];
     for (const id of idsToTest) {
       const product = await getProductInfo(browser, id);

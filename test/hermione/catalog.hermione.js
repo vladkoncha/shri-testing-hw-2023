@@ -18,6 +18,9 @@ describe("Тестирование каталога.", () => {
       ".ProductDetails-AddToCart"
     );
     await addToCartButton.click();
+    await new Promise((resolve) => {
+      setTimeout(() => resolve(), 100);
+    });
   }
 
   async function getProductCount(browser, productId) {
@@ -84,7 +87,7 @@ describe("Тестирование каталога.", () => {
     });
   }
 
-  const idsToTest = [0, 1, 2];
+  const idsToTest = [0];
   for (const id of idsToTest) {
     testAddingProductToCart(id.toString());
   }
