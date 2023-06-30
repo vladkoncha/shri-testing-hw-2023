@@ -27,11 +27,16 @@ describe("Тестирование корзины", () => {
 
     const cartTable = await cartContainer.$(".Cart-Table");
 
-    assert.exists(cartTable, "Должна существовать таблица с заказом.");
+    assert.equal(
+      await cartTable.isDisplayed(),
+      true,
+      "Должна существовать таблица с заказом."
+    );
 
     const clearCartButton = await cartContainer.$(".Cart-Clear");
-    assert.exists(
-      clearCartButton,
+    assert.equal(
+      await clearCartButton.isDisplayed(),
+      true,
       "Должна существовать кнопка очистки корзины."
     );
 
@@ -187,7 +192,36 @@ describe("Тестирование корзины", () => {
     });
   }
 
+  function testEmptyCartLink() {
+    it(`Если корзина пустая, должна отображаться ссылка на каталог товаров`, async ({
+      browser,
+    }) => {
+      await browser.setWindowSize(1024, 1000);
+
+      browser.execute(() =>
+        window.localStorage.removeItem("example-store-cart")
+      );
+
+      const cartTable = await getCartTable(browser);
+      assert.equal(
+        await cartTable.isDisplayed(),
+        false,
+        "Таблица с заказом не должна отображаться, если корзина пустая."
+      );
+
+      await browser.url(getUrl("/cart"));
+      const catalogLink = await browser.$('a[href="/hw/store/catalog"]');
+
+      assert.equal(
+        await catalogLink.isDisplayed(),
+        true,
+        "Должна отображаться ссылка на каталог."
+      );
+    });
+  }
+
   testHeaderCartCount();
   testCartTable();
   testClearCartButton();
+  testEmptyCartLink();
 });
