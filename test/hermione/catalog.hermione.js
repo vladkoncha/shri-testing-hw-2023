@@ -1,15 +1,6 @@
 const { assert } = require("chai");
 const axios = require("axios");
-
-let bugId = "";
-if (process.env.BUG_ID !== undefined) {
-  bugId = process.env.BUG_ID;
-}
-
-function getUrl(route, productId = "") {
-  return `/hw/store${route}/${productId}` + (bugId && `?bug_id=${bugId}`);
-}
-
+const { getProductInfo, getUrl } = require("./utils");
 describe("Тестирование каталога.", () => {
   async function clickAddToCartButton(browser, productId) {
     await browser.url(getUrl("/catalog", productId));
@@ -22,32 +13,6 @@ describe("Тестирование каталога.", () => {
     await new Promise((resolve) => {
       setTimeout(() => resolve(), 100);
     });
-  }
-
-  async function getProductInfo(browser, productId) {
-    await browser.url(getUrl("/catalog", productId));
-    const productContainer = await browser.$(".Product");
-
-    const name = await productContainer.$(".ProductDetails-Name").getText();
-    const price = (await productContainer.$(".ProductDetails-Price").getText())
-      .trim()
-      .slice(1);
-    const description = await productContainer
-      .$(".ProductDetails-Description")
-      .getText();
-    const color = await productContainer.$(".ProductDetails-Color").getText();
-    const material = await productContainer
-      .$(".ProductDetails-Material")
-      .getText();
-
-    return {
-      id: productId,
-      name,
-      price,
-      description,
-      color,
-      material,
-    };
   }
 
   async function getProductCount(browser, productId) {
@@ -132,13 +97,24 @@ describe("Тестирование каталога.", () => {
       const productPrice = await productCard.$(".ProductItem-Price");
 
       assert.equal(
-        await productName.getText(),
-        product.name,
-        `Название продукта должно соответствовать полученному с сервера`
+        (await productName.getText()).length > 0,
+        true,
+        `Название продукта  не должно быть пустым`
       );
       assert.equal(
-        (await productPrice.getText()).trim().slice(1),
-        product.price,
+        (await productName.getText()) || "",
+        product.name || "",
+        `Название продукта должно соответствовать полученному с сервера`
+      );
+
+      assert.equal(
+        (await productPrice.getText()).trim().slice(1).length > 0,
+        true,
+        `Цена продукта не должна быть пустой`
+      );
+      assert.equal(
+        (await productPrice.getText()).trim().slice(1) || "",
+        product.price || "",
         `Цена продукта должна соответствовать полученной с сервера`
       );
     }
@@ -156,16 +132,28 @@ describe("Тестирование каталога.", () => {
 
     for (const product of serverCatalog) {
       const clientProductInfo = await getProductInfo(browser, product.id);
-      const serverProductInfo = (
-        await axios.get(
-          "http://localhost:3000" + getUrl("/api/products", product.id)
-        )
-      ).data;
+      const url = "http://localhost:3000" + getUrl("/api/products", product.id);
+      const serverProductInfo = (await axios.get(url)).data;
 
-      for (const field of Object.keys(clientProductInfo)) {
+      const fieldsToAssert = [
+        "id",
+        "name",
+        "price",
+        "description",
+        "color",
+        "material",
+      ];
+
+      for (const field of fieldsToAssert) {
+        assert.equal(
+          clientProductInfo[field].toString().length > 0,
+          true,
+          `Значение ${field} продукта не должно быть пустым`
+        );
+
         assert.equal(
           clientProductInfo[field].toString().toLowerCase(),
-          serverProductInfo[field].toString().toLowerCase(),
+          (serverProductInfo[field] ?? "").toString().toLowerCase(),
           `Значение ${field} продукта должно соответствовать полученному с сервера`
         );
       }
