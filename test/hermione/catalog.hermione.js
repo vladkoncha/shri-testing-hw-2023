@@ -1,4 +1,5 @@
 const { assert } = require("chai");
+const axios = require("axios");
 
 let bugId = "";
 if (process.env.BUG_ID !== undefined) {
@@ -23,6 +24,32 @@ describe("Тестирование каталога.", () => {
     });
   }
 
+  async function getProductInfo(browser, productId) {
+    await browser.url(getUrl("/catalog", productId));
+    const productContainer = await browser.$(".Product");
+
+    const name = await productContainer.$(".ProductDetails-Name").getText();
+    const price = (await productContainer.$(".ProductDetails-Price").getText())
+      .trim()
+      .slice(1);
+    const description = await productContainer
+      .$(".ProductDetails-Description")
+      .getText();
+    const color = await productContainer.$(".ProductDetails-Color").getText();
+    const material = await productContainer
+      .$(".ProductDetails-Material")
+      .getText();
+
+    return {
+      id: productId,
+      name,
+      price,
+      description,
+      color,
+      material,
+    };
+  }
+
   async function getProductCount(browser, productId) {
     await browser.url(getUrl("/cart"));
     const productRow = await browser.$(`tr[data-testid="${productId}"]`);
@@ -40,6 +67,11 @@ describe("Тестирование каталога.", () => {
     await browser.refresh();
     await browser.url(getUrl("/cart"));
     return await browser.$(".Cart-Table");
+  }
+
+  const idsToTest = [0];
+  for (const id of idsToTest) {
+    testAddingProductToCart(id.toString());
   }
 
   function testAddingProductToCart(productId) {
@@ -62,35 +94,81 @@ describe("Тестирование каталога.", () => {
     });
   }
 
-  function testCartPageReload() {
-    it(`Содержимое корзины должно сохраняться между перезагрузками страницы`, async ({
-      browser,
-    }) => {
-      await browser.setWindowSize(1024, 1000);
-      browser.execute(() =>
-        window.localStorage.removeItem("example-store-cart")
-      );
+  it(`Содержимое корзины должно сохраняться между перезагрузками страницы`, async ({
+    browser,
+  }) => {
+    await browser.setWindowSize(1024, 1000);
+    browser.execute(() => window.localStorage.removeItem("example-store-cart"));
 
-      const tables = [];
+    const tables = [];
 
+    tables.push(await getCartTable(browser));
+
+    for (let i = 1; i < 5; i++) {
       tables.push(await getCartTable(browser));
 
-      for (let i = 1; i < 5; i++) {
-        tables.push(await getCartTable(browser));
+      assert.equal(
+        tables[i - 1].outerHTML,
+        tables[i].outerHTML,
+        `Содержимое корзины должно сохраняться между перезагрузками страницы`
+      );
+    }
+  });
 
+  it(`В каталоге должны отображаться товары, список которых приходит с сервера`, async ({
+    browser,
+  }) => {
+    await browser.setWindowSize(1024, 1000);
+    browser.execute(() => window.localStorage.removeItem("example-store-cart"));
+
+    const serverCatalog = (
+      await axios.get("http://localhost:3000" + getUrl("/api/products"))
+    ).data;
+
+    await browser.url(getUrl("/catalog"));
+    for (const product of serverCatalog) {
+      const productCard = await browser.$(`div[data-testid="${product.id}"]`);
+      const productName = await productCard.$(".ProductItem-Name");
+      const productPrice = await productCard.$(".ProductItem-Price");
+
+      assert.equal(
+        await productName.getText(),
+        product.name,
+        `Название продукта должно соответствовать полученному с сервера`
+      );
+      assert.equal(
+        (await productPrice.getText()).trim().slice(1),
+        product.price,
+        `Цена продукта должна соответствовать полученной с сервера`
+      );
+    }
+  });
+
+  it(`На странице с подробной информацией отображаются: название товара, его описание, цена, цвет, материал и кнопка "добавить в корзину"`, async ({
+    browser,
+  }) => {
+    await browser.setWindowSize(1024, 1000);
+    browser.execute(() => window.localStorage.removeItem("example-store-cart"));
+
+    const serverCatalog = (
+      await axios.get("http://localhost:3000" + getUrl("/api/products"))
+    ).data;
+
+    for (const product of serverCatalog) {
+      const clientProductInfo = await getProductInfo(browser, product.id);
+      const serverProductInfo = (
+        await axios.get(
+          "http://localhost:3000" + getUrl("/api/products", product.id)
+        )
+      ).data;
+
+      for (const field of Object.keys(clientProductInfo)) {
         assert.equal(
-          tables[i - 1].outerHTML,
-          tables[i].outerHTML,
-          `Содержимое корзины должно сохраняться между перезагрузками страницы`
+          clientProductInfo[field].toString().toLowerCase(),
+          serverProductInfo[field].toString().toLowerCase(),
+          `Значение ${field} продукта должно соответствовать полученному с сервера`
         );
       }
-    });
-  }
-
-  const idsToTest = [0];
-  for (const id of idsToTest) {
-    testAddingProductToCart(id.toString());
-  }
-
-  testCartPageReload();
+    }
+  });
 });
